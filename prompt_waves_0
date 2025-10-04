@@ -1,1 +1,10 @@
+How it should work:
+0. We build the waves on screen 
 
+1. Drag each wave over into the inspector 
+
+2. When all ships of the current wave kick the bucket, comment And bring the next wave in. 
+
+2a. timer for the next wave to come in just in case the player can't find or hit a ship in some weird spot.
+
+3. End scene/level on the last wave, (maybe too much for one prompt but chatgpt can find Atlantis🤷🏾‍♂️)
