@@ -8,3 +8,179 @@ How it should work:
 2a. timer for the next wave to come in just in case the player can't find or hit a ship in some weird spot.
 
 3. End scene/level on the last wave, (maybe too much for one prompt but chatgpt can find Atlantis🤷🏾‍♂️)
+==============================
+==============================
+A Unity 3d script for a mobile 3d space shooter game that uses object pooling, the script  brings the next enemy wave to life after all of the enemy space ships in the current wave have been destroyed or if twenty seconds have passed.
+
+End scene after the last enemy ship in the last enemy wave has been destroyed.
+------------------------
+Here's a Unity C# script that manages enemy wave spawning using object pooling, supports a time-based fallback, and ends the scene after the last wave is complete.
+~~~~~~~~~~~~~~~~~~~~~~~
+Script Features:
+
+Uses Object Pooling for enemies.
+
+Starts a new wave if:
+
+All current wave enemies are destroyed, or
+
+20 seconds have passed.
+
+Ends the scene after the last wave is cleared.
+
+📜 Script: EnemyWaveManager.cs
+using UnityEngine;
+using System.Collections.Generic;
+using UnityEngine.SceneManagement;
+
+public class EnemyWaveManager : MonoBehaviour
+{
+    [System.Serializable]
+    public class Wave
+    {
+        public int enemyCount;
+    }
+
+    public List<Wave> waves;
+    public GameObject enemyPrefab;
+    public Transform[] spawnPoints;
+    public float waveTimeLimit = 20f;
+
+    private Queue<GameObject> enemyPool = new Queue<GameObject>();
+    private List<GameObject> activeEnemies = new List<GameObject>();
+
+    private int currentWaveIndex = -1;
+    private float waveTimer = 0f;
+
+    public int poolSize = 50;
+
+    private bool gameEnded = false;
+
+    void Start()
+    {
+        CreateEnemyPool();
+        StartNextWave();
+    }
+
+    void Update()
+    {
+        if (gameEnded) return;
+
+        waveTimer += Time.deltaTime;
+
+        CleanDeadEnemies();
+
+        if ((activeEnemies.Count == 0 || waveTimer >= waveTimeLimit))
+        {
+            if (currentWaveIndex < waves.Count - 1)
+            {
+                StartNextWave();
+            }
+            else if (activeEnemies.Count == 0)
+            {
+                EndGame();
+            }
+        }
+    }
+
+    void CreateEnemyPool()
+    {
+        for (int i = 0; i < poolSize; i++)
+        {
+            GameObject enemy = Instantiate(enemyPrefab);
+            enemy.SetActive(false);
+            enemyPool.Enqueue(enemy);
+        }
+    }
+
+    GameObject GetEnemyFromPool()
+    {
+        if (enemyPool.Count > 0)
+        {
+            GameObject enemy = enemyPool.Dequeue();
+            enemy.SetActive(true);
+            return enemy;
+        }
+        else
+        {
+            // Expand pool if necessary
+            GameObject enemy = Instantiate(enemyPrefab);
+            return enemy;
+        }
+    }
+
+    void ReturnEnemyToPool(GameObject enemy)
+    {
+        enemy.SetActive(false);
+        enemyPool.Enqueue(enemy);
+    }
+
+    void StartNextWave()
+    {
+        currentWaveIndex++;
+        waveTimer = 0f;
+
+        int enemyCount = waves[currentWaveIndex].enemyCount;
+
+        for (int i = 0; i < enemyCount; i++)
+        {
+            GameObject enemy = GetEnemyFromPool();
+
+            Transform spawnPoint = spawnPoints[Random.Range(0, spawnPoints.Length)];
+            enemy.transform.position = spawnPoint.position;
+            enemy.transform.rotation = spawnPoint.rotation;
+
+            // Reset or initialize enemy here if needed
+            var enemyComponent = enemy.GetComponent<Enemy>();
+            if (enemyComponent != null)
+                enemyComponent.OnDeath = () => ReturnEnemyToPool(enemy);
+
+            activeEnemies.Add(enemy);
+        }
+    }
+
+    void CleanDeadEnemies()
+    {
+        activeEnemies.RemoveAll(e => e == null || !e.activeInHierarchy);
+    }
+
+    void EndGame()
+    {
+        gameEnded = true;
+        Debug.Log("All waves cleared! Ending scene...");
+        // Replace with your actual end scene logic
+        SceneManager.LoadScene("GameOverScene"); // make sure this scene is added to build settings
+    }
+}
+
+🧠 Notes:
+
+This script expects each enemy to call OnDeath() when it's destroyed.
+
+Here’s an example snippet for an Enemy.cs component:
+
+using UnityEngine;
+public class Enemy : MonoBehaviour
+{
+    public System.Action OnDeath;
+
+    public void DestroyEnemy()
+    {
+        // Add explosion, effects, score, etc. here
+        OnDeath?.Invoke();
+        gameObject.SetActive(false);
+    }
+}
+
+🛠 Setup Instructions:
+
+Create enemy prefab with the Enemy script.
+
+Assign spawn points (empty GameObjects).
+
+Create waves in the Inspector via the EnemyWaveManager.
+
+==============================
+Would you like me to include a UI countdown or show the number of enemies remaining?
+
+Add the scene name "GameOverScene" to your Build Settings.
