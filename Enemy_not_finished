@@ -1,0 +1,23 @@
+//move to enemy_health asap
+
+//~~~absolute beginning of Enemy script~~~
+
+using UnityEngine;
+
+public class Enemy : MonoBehaviour
+{//beg of public class Enemy : MonoBehaviour
+
+    public System.Action OnDeath;
+
+    public void Die()
+    {
+        // Add explosion, effects, score, etc. here
+        OnDeath?.Invoke();
+        gameObject.SetActive(false);
+    }
+
+
+}//end of public class Enemy : MonoBehaviour
+
+
+//~~~absolute end of Enemy script~~~
